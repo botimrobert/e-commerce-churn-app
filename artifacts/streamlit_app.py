@@ -1,71 +1,68 @@
-# artifacts/streamlit_app.py
-
+# =========================
+# Paths & model loading (FIXED)
+# =========================
 from pathlib import Path
-import os
 import joblib
-import numpy as np
-import pandas as pd
 import streamlit as st
 
-# =========================
-# App config (keep at top)
-# =========================
-st.set_page_config(
-    page_title="E‑Commerce Customer Churn Predictor",
-    page_icon="🧭",
-    layout="centered",
-)
-st.title("🧭 Customer Churn Predictor")
-st.caption("Inputs are aligned to the training schema you provided.")
-
-# =========================
-# Paths & model loading
-# =========================
-
-# Use the exact filename you committed. If your file is named with a space, keep it.
-MODEL_RELATIVE_PATH = Path("artifacts") / "best model.joblib"
-# If you renamed to an underscore version, use:
-# MODEL_RELATIVE_PATH = Path("artifacts") / "best_model.joblib"
-
+# Use the exact filename in your repo. If your file literally has a space, keep it.
+MODEL_FILENAME = "best model.joblib"      # or "best_model.joblib" if you renamed it
 
 def resolve_model_path() -> Path:
     """
-    Resolve the model path robustly so it works locally and on Streamlit Cloud.
-    Attempts relative to this script first, then to current working directory.
+    Resolve the model path robustly for both local runs and Streamlit Cloud.
+    If this script is inside the `artifacts/` folder, first try the file next to it.
+    Otherwise, try repo-root `artifacts/` and current working directory as fallbacks.
     """
     try:
         script_dir = Path(__file__).parent.resolve()
     except NameError:
         script_dir = Path.cwd().resolve()
 
-    cand1 = (script_dir / MODEL_RELATIVE_PATH).resolve()
-    if cand1.exists():
-        return cand1
+    candidates = []
 
-    cand2 = (Path.cwd() / MODEL_RELATIVE_PATH).resolve()
-    if cand2.exists():
-        return cand2
+    # 1) If the script itself is inside artifacts/, check sibling file first
+    if script_dir.name.lower() == "artifacts":
+        candidates.append((script_dir / MODEL_FILENAME).resolve())
 
-    # Return primary candidate for clearer error messages
-    return cand1
+    # 2) Repo-root artifacts/ (works even if script moved later)
+    repo_root = script_dir if script_dir.name.lower() != "artifacts" else script_dir.parent
+    candidates.append((repo_root / "artifacts" / MODEL_FILENAME).resolve())
+
+    # 3) Current working directory fallbacks
+    candidates.append((Path.cwd() / MODEL_FILENAME).resolve())
+    candidates.append((Path.cwd() / "artifacts" / MODEL_FILENAME).resolve())
+
+    for p in candidates:
+        if p.exists():
+            return p
+
+    # Return the first candidate for clearer error messaging
+    return candidates[0]
 
 
 @st.cache_resource(show_spinner=False)
 def load_model(path: Path):
     """
     Load and cache the trained pipeline/model from disk.
-    `st.cache_resource` is ideal for heavy objects like ML pipelines.
     """
     if not path.exists():
         raise FileNotFoundError(
             f"Model not found at: {path}. "
-            "Please ensure your full Pipeline was saved to "
-            "'artifacts/best model.joblib' (or update MODEL_RELATIVE_PATH)."
+            "If your file is next to this app (inside artifacts/), set MODEL_FILENAME correctly. "
+            "Otherwise place the file at 'artifacts/best model.joblib' (or adjust MODEL_FILENAME)."
         )
     return joblib.load(path)
 
 
 MODEL_PATH = resolve_model_path()
+
+# --- Optional diagnostics to print where the app is looking ---
+with st.expander("🔎 Debug: model path resolution", expanded=False):
+    st.write("script_dir:", Path(__file__).parent.resolve() if "__file__" in globals() else Path.cwd().resolve())
+    st.write("Working directory:", Path.cwd())
+    st.write("Resolved MODEL_PATH:", str(MODEL_PATH))
+
 try:
     model = load_model(MODEL_PATH)
     st.success(f"✅ Model loaded from: `{MODEL_PATH}`")
