@@ -24,7 +24,7 @@ st.caption("Inputs are aligned to the training schema you provided.")
 #model = joblib.load(model_path)
 
 ARTIFACTS_DIR = Path.cwd() / "artifacts"
-MODEL_PATH = Path("artifacts/best_model.joblib")   # <- adjust only if your file is named differently
+MODEL_PATH = Path("artifacts/best_model2.joblib")   # <- adjust only if your file is named differently
 
 @st.cache_resource(show_spinner=False)
 def load_model(path: Path):
