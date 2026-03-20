@@ -3,5 +3,5 @@ scikit-learn
 joblib
 pandas
 numpy
-scikit-learn==1.4.1.post1
-python-dateutil==2.9.0.post0
+scikit-learn
+python-dateutil
