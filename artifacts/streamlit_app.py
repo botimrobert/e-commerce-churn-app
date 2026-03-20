@@ -6,7 +6,7 @@ import joblib
 import streamlit as st
 
 # Use the exact filename in your repo. If your file literally has a space, keep it.
-MODEL_FILENAME = "best model.joblib"      # or "best_model.joblib" if you renamed it
+MODEL_FILENAME = "artifacts/best model.joblib"      # or "best_model.joblib" if you renamed it
 
 def resolve_model_path() -> Path:
     """
